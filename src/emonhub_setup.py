@@ -81,13 +81,7 @@ class EmonHubFileSetup(EmonHubSetup):
 
         # Initialize update timestamp
         self._settings_update_timestamp = 0
-        self._retry_time_interval = 5
-
-        # create a timeout message if time out is set (>0)
-        if self._retry_time_interval > 0:
-            self.retry_msg = " Retry in " + str(self._retry_time_interval) + " seconds"
-        else:
-            self.retry_msg = ""
+        self._retry_time_interval = 60
 
         # Initialize attribute settings as a ConfigObj instance
         try:
@@ -114,7 +108,7 @@ class EmonHubFileSetup(EmonHubSetup):
         
         # Check settings only once per second
         now = time.time()
-        if now - self._settings_update_timestamp < 0:
+        if now - self._settings_update_timestamp < 1:
             return
         # Update timestamp
         self._settings_update_timestamp = now
@@ -126,18 +120,18 @@ class EmonHubFileSetup(EmonHubSetup):
         try:
             self.settings.reload()
         except IOError as e:
-            self._log.warning('Could not get settings: ' + str(e) + self.retry_msg)
+            self._log.warning('Could not get settings: ' + str(e))
             self._settings_update_timestamp = now + self._retry_time_interval
             return
         except SyntaxError as e:
             self._log.warning('Could not get settings: ' + 
-                              'Error parsing config file: ' + str(e) + self.retry_msg)
+                              'Error parsing config file: ' + str(e))
             self._settings_update_timestamp = now + self._retry_time_interval
             return
         except Exception:
             import traceback
             self._log.warning("Couldn't get settings, Exception: " +
-                              traceback.format_exc() + self.retry_msg)
+                              traceback.format_exc())
             self._settings_update_timestamp = now + self._retry_time_interval
             return
         

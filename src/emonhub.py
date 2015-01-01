@@ -35,7 +35,7 @@ Communicates with the user through an EmonHubSetup
 
 class EmonHub(object):
     
-    __version__ = 'Pre-Release Development Version (rc1.2)'
+    __version__ = 'Pre-Release Development Version (rc1.0)'
     
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
@@ -105,16 +105,13 @@ class EmonHub(object):
     def close(self):
         """Close hub. Do some cleanup before leaving."""
         
-        self._log.info("Exiting hub...")
-
         for I in self._interfacers.itervalues():
             I.close()
 
         for R in self._reporters.itervalues():
             R.stop = True
-            R.join()
-
-        self._log.info("Exit completed")
+        
+        self._log.info("Exiting hub...")
         logging.shutdown()
 
     def _sigint_handler(self, signal, frame):
@@ -224,7 +221,8 @@ class EmonHub(object):
                         continue
                     self._log.info("Creating " + I['Type'] + " '%s' ", name)
                     # This gets the class from the 'Type' string
-                    interfacer = getattr(ehi, I['Type'])(name, **I['init_settings'])
+                    interfacer = getattr(ehi, I['Type'])(**I['init_settings'])
+                    interfacer.name = name
                     interfacer.set(**I['runtimesettings'])
                     interfacer.init_settings = I['init_settings']
                 except ehi.EmonHubInterfacerInitError as e:
@@ -321,7 +319,7 @@ if __name__ == "__main__":
         setup = ehs.EmonHubFileSetup(args.config_file)
     except ehs.EmonHubSetupInitError as e:
         logger.critical(e)
-        sys.exit("Unable to load configuration file: " + args.config_file)
+        sys.exit("Configuration file not found: " + args.config_file)
  
     # If in "Show settings" mode, print settings and exit
     if args.show_settings:
